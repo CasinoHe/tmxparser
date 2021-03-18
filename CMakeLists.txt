@@ -12,29 +12,36 @@ message("Configuring tmxparser version ${VERSION}")
 file(GLOB_RECURSE SOURCES ${PROJECT_SOURCE_DIR}/src/*.cpp)
 file(GLOB_RECURSE HEADERS ${PROJECT_SOURCE_DIR}/src/*.h)
 
-find_package(TinyXML)
-find_package(ZLIB)
+if (NOT DEFINED TINYXML_LIBRARIES)
+  find_package(TinyXML REQUIRED)
+  if (not TinyXML_FOUND)
+    message(FATAL_ERROR "tinyxml package not found. You need set TINYXML_LIBRARIES and TINYXML_INCLUDE_DIRS variables manually")
+  endif()
+else()
+  message(STATUS "find tinyxml libraries: ${TINYXML_LIBRARIES}")
+endif()
 
-set(LIB_CFLAGS "-pedantic -Werror -Wall -Werror=strict-prototypes -Werror=old-style-definition -Werror=missing-prototypes")
-set(EXAMPLE_CFLAGS "-pedantic -Werror -Wall")
-#include_directories("${PROJECT_SOURCE_DIR}/include")
+if (NOT DEFINED ZLIB_LIBRARIES)
+  find_package(ZLIB)
+  if (not ZLIB_FOUND)
+    message(FATAL_ERROR "zlib package not found. You need set ZLIB_LIBRARIES and ZLIB_INCLUDE_DIRS variables manually")
+  endif()
+else()
+  message(STATUS "find zlib libraries: ${ZLIB_LIBRARIES}")
+endif()
 
 add_library(tmxparser_static STATIC ${SOURCES} ${HEADERS})
-set_target_properties(tmxparser_static PROPERTIES
-  OUTPUT_NAME tmxparser
-  COMPILE_FLAGS ${LIB_CFLAGS})
+set_target_properties(tmxparser_static PROPERTIES OUTPUT_NAME tmxparser)
 
 add_library(tmxparser SHARED ${SOURCES} ${HEADERS})
 set_target_properties(tmxparser PROPERTIES
   SOVERSION ${VERSION_MAJOR}
-  VERSION ${VERSION}
-  COMPILE_FLAGS ${LIB_CFLAGS})
+  VERSION ${VERSION})
+
 target_link_libraries(tmxparser ${TINYXML_LIBRARIES} ${ZLIB_LIBRARIES})
 include_directories(${TINYXML_INCLUDE_DIR} ${ZLIB_INCLUDE_DIRS})
 
 add_executable(test test/test.cpp)
-set_target_properties(test PROPERTIES
-  COMPILE_FLAGS ${EXAMPLE_CFLAGS})
 target_link_libraries(test tmxparser)
 
 install(FILES ${HEADERS} DESTINATION include/tmxparser)
